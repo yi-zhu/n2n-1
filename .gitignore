@@ -6,11 +6,16 @@ configure.ac
 config.*
 Makefile
 autom4te.cache
-benchmark
 edge
+example_edge_embed_quick_edge_init
 example_edge_embed
+example_sn_embed
 supernode
+tools/n2n-benchmark
+tools/n2n-decode
 build
+.idea
+cmake-build-default
 packages/debian/debian/changelog
 packages/debian/debian/control
 packages/debian/debian/files
@@ -19,3 +24,4 @@ packages/etc/systemd/system/edge-ntopng@.service
 packages/etc/systemd/system/edge.service
 packages/etc/systemd/system/edge@.service
 packages/etc/systemd/system/supernode.service
+*dSYM*

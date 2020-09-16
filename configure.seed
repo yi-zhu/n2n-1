@@ -13,15 +13,63 @@ else
 GIT_RELEASE=${N2N_VERSION_SHORT}
 fi
 
-AC_CHECK_LIB([crypto], [AES_cbc_encrypt])
-
 N2N_LIBS=
 
-if test "x$ac_cv_lib_crypto_AES_cbc_encrypt" != xyes; then
-  AC_MSG_RESULT(Building n2n without AES support)
-else
-  AC_DEFINE([N2N_HAVE_AES], [], [Have AES support])
-  N2N_LIBS=-lcrypto
+AC_PROG_CC
+
+AC_ARG_WITH([zstd],
+ [AS_HELP_STRING([--with-zstd],
+ [enable support for zstd])],
+ [],
+ [with_zstd=no])
+if test "x$with_zstd" != xno; then
+  AC_CHECK_LIB([zstd], [ZSTD_compress])
+  if test "x$ac_cv_lib_zstd_ZSTD_compress" != xyes; then
+    AC_MSG_RESULT(Building n2n without ZSTD support)
+  else
+    AC_DEFINE([N2N_HAVE_ZSTD], [], [Have ZSTD support])
+    N2N_LIBS="-lzstd ${N2N_LIBS}"
+  fi
+fi
+
+AC_ARG_WITH([openssl],
+ [AS_HELP_STRING([--with-openssl],
+ [enable support for OpenSSL])],
+ [],
+ [with_openssl=no])
+if test "x$with_openssl" != xno; then
+  OLD_CFLAGS="${CFLAGS}"
+  OLD_LDFLAGS="${LDFLAGS}"
+  CFLAGS="${CFLAGS} -I/usr/local/opt/openssl@1.1/include"
+  LDFLAGS="${LDFLAGS} -L/usr/local/opt/openssl@1.1/lib/"
+  AC_CHECK_LIB([crypto], [EVP_CIPHER_CTX_reset])
+  if test "x$ac_cv_lib_crypto_EVP_CIPHER_CTX_reset" != xyes; then
+     AC_MSG_RESULT(OpenSSL 1.1 not present)
+     CFLAGS="${OLD_CFLAGS}"
+     LDFLAGS="${OLD_LDFLAGS}"
+  else
+    AC_DEFINE([HAVE_OPENSSL_1_1], [], [OpenSSL 1.1 is present])
+    N2N_LIBS="-lcrypto ${N2N_LIBS}"
+  fi
+fi
+
+AC_CHECK_LIB([pcap], [pcap_open_live], pcap=true)
+
+if test x$pcap != x; then
+  AC_DEFINE([N2N_HAVE_PCAP], [], [Have PCAP library])
+  ADDITIONAL_TOOLS="$ADDITIONAL_TOOLS n2n-decode"
+fi
+
+AC_CHECK_LIB([pcap], [pcap_set_immediate_mode], pcap_immediate_mode=true)
+
+if test x$pcap_immediate_mode != x; then
+  AC_DEFINE([HAVE_PCAP_IMMEDIATE_MODE], [], [Have pcap_immediate_mode])
+fi
+
+AC_CHECK_LIB([cap], [cap_get_proc], cap=true)
+if test x$cap != x; then
+  LDFLAGS="${LDFLAGS} -lcap"
+  AC_DEFINE([HAVE_LIBCAP],[1],[Support for linux capabilities])
 fi
 
 MACHINE=`uname -m`
@@ -51,6 +99,9 @@ fi
 
 DATE=`date +"%Y-%m-%d"`
 
+AC_SUBST(CC)
+AC_SUBST(CFLAGS)
+AC_SUBST(LDFLAGS)
 AC_SUBST(N2N_MAJOR)
 AC_SUBST(N2N_MINOR)
 AC_SUBST(N2N_PATCH)
@@ -60,8 +111,9 @@ AC_SUBST(GIT_REVISION)
 AC_SUBST(GIT_RELEASE)
 AC_SUBST(N2N_DEFINES)
 AC_SUBST(N2N_LIBS)
-AC_CONFIG_HEADERS(config.h)
+AC_SUBST(ADDITIONAL_TOOLS)
+AC_CONFIG_HEADERS(include/config.h)
 AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(tools/Makefile)
 
 AC_OUTPUT
-

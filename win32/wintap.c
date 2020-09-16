@@ -2,7 +2,7 @@
   (C) 2007-09 - Luca Deri <deri@ntop.org>
 */
 
-#include "../n2n.h"
+#include "n2n.h"
 #include "n2n_win32.h"
 
 /* ***************************************************** */
@@ -241,7 +241,7 @@ int open_wintap(struct tuntap_dev *device,
       printf("No Windows tap devices found, did you run tapinstall.exe?\n");
     else
       printf("Cannot find tap device \"%s\"\n", devname);
-    exit(EXIT_FAILURE);
+    return -1;
   }
 
   /* ************************************** */
